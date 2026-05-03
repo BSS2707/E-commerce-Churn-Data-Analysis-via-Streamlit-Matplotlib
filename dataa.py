@@ -1,0 +1,60 @@
+import streamlit as st
+import joblib
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from io import StringIO
+
+model = joblib.load('ecommerce_churn_data.joblib')
+st.title('E-commerce Churn Data Analysis via Streamlit & Matplotlib')
+st.write("Here's a preview of the dataset:")
+st.dataframe(model.head())
+st.write("Dataset Information:")
+buffer = StringIO()
+model.info(buf=buffer)
+info_str = buffer.getvalue()
+st.text(info_str)
+st.write("Statistical Summary:")
+st.dataframe(model.describe())
+fillna = model['Tenure'].mean()
+model.fillna({'Tenure': fillna}, inplace=True)
+gp = model.groupby('Churn')['CashbackAmount'].agg(
+    mean='mean',
+    median='median',
+    sum='sum'
+).reset_index()
+st.write("Grouped Data by Churn Status:")
+st.dataframe(gp)
+fig, ax = plt.subplots()
+sns.barplot(x='Churn', y='mean', data=gp, ax=ax)
+ax.set_title('Average Cashback Amount by Churn Status')
+ax.set_xlabel('Churn Status')
+ax.set_ylabel('Average Cashback Amount')
+st.pyplot(fig)
+fig, ax = plt.subplots()
+ax.pie(gp['mean'], labels=gp['Churn'], autopct='%1.1f%%', startangle=140)
+ax.set_title('Proportion of Average Cashback Amount by Churn Status')
+ax.axis('equal')
+st.pyplot(fig)
+fig, ax = plt.subplots()
+sns.boxplot(x='Churn', y='CashbackAmount', data=model, ax=ax)
+ax.set_title('Boxplot of Cashback Amount by Churn Status')
+ax.set_xlabel('Churn Status')
+ax.set_ylabel('Cashback Amount')
+st.pyplot(fig)
+fig, ax = plt.subplots()
+sns.scatterplot(x='Tenure', y='CashbackAmount', hue='Churn', data=model, ax=ax)
+ax.set_title('Scatter Plot of Tenure vs Cashback Amount by Churn Status')
+ax.set_xlabel('Tenure')
+ax.set_ylabel('Cashback Amount')
+st.pyplot(fig)
+fig, ax = plt.subplots()
+sns.countplot(x='Churn', data=model, ax=ax)
+ax.set_title('Count of Churn Status')   
+ax.set_xlabel('Churn Status')
+ax.set_ylabel('Count')
+st.pyplot(fig)
+fig, ax = plt.subplots()
+sns.heatmap(model.select_dtypes(include='number').corr(), annot=True, cmap='coolwarm', ax=ax)
+ax.set_title('Correlation Heatmap')
+st.pyplot(fig)
